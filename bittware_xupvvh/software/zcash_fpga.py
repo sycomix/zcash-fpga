@@ -6,17 +6,17 @@ class zcash_fpga:
     import struct
     import struct
 
-    def byt_to_ver(a):
-        return 'v{}.{}.{}'.format(a[2], a[1], a[0])
+    def byt_to_ver(self):
+        return f'v{self[2]}.{self[1]}.{self[0]}'
 
-    def byt_to_str(a):
-        return a[::-1].decode("utf-8")
+    def byt_to_str(self):
+        return self[::-1].decode("utf-8")
 
-    def byt_to_hex(a):
-        return '0x' + a.hex()
+    def byt_to_hex(self):
+        return f'0x{self.hex()}'
 
-    def byt_to_int(a):
-        return int.from_bytes(a, byteorder='little')
+    def byt_to_int(self):
+        return int.from_bytes(self, byteorder='little')
 
     fpga_msg_type_dict = {'FPGA_IGNORE_RPL':int('80000002', 16),
                           'FPGA_STATUS_RPL':int('80000001', 16),
@@ -90,13 +90,13 @@ class zcash_fpga:
     def equihash_verify(self, index, hdr):
         cmd = '00000100000005df'
         cmd = format(index, 'x').rjust(16, '0') + cmd
-        
+
         #Need to swap cmd byte order
         cmd = "".join(reversed([cmd[i:i+2] for i in range(0, len(cmd), 2)]))
 
         #Add on binary data for header since it is already in correct format
-        
-        cmd = cmd + hdr.rjust(1487, '0')
+
+        cmd += hdr.rjust(1487, '0')
         self.s.write(self.codecs.decode(cmd, 'hex'))
         res = self.get_reply()[0] # Just look at the first reply
         if res is not None and (self.struct.unpack('<I', res[4:8])[0] != self.fpga_msg_type_dict['VERIFY_EQUIHASH_RPL']):
@@ -116,15 +116,15 @@ class zcash_fpga:
         print("Closed...")
 
     def parse_reply(self, msg, msg_list = None):
-        if (msg_list == None):
+        if msg_list is None:
             msg_list = []
         if (len(msg) >= 8):
-            length = (self.struct.unpack('<I', msg[0:4])[0])
+            length = self.struct.unpack('<I', msg[:4])[0]
             if length == 0:
                 return msg_list
-            msg_list.append(msg[0:length])
+            msg_list.append(msg[:length])
             if (len(msg) > length):
-                self.parse_reply(msg[length:len(msg)], msg_list)
+                self.parse_reply(msg[length:], msg_list)
         return msg_list
 
     def print_reply(self, msg):
